@@ -8,12 +8,16 @@ const json = async (res) => {
   return res.json();
 };
 
+const qp = (platform) => (platform ? `platform=${encodeURIComponent(platform)}` : "");
+
 export const api = {
   health: () => fetch("/api/health").then(json),
   status: () => fetch("/api/status").then(json),
-  markets: () => fetch("/api/markets").then(json),
-  orderbook: (id) => fetch(`/api/orderbook?market_id=${encodeURIComponent(id)}`).then(json),
-  scan: () => fetch("/api/scan").then(json),
+  platforms: () => fetch("/api/platforms").then(json),
+  markets: (platform) => fetch(`/api/markets?${qp(platform)}`).then(json),
+  orderbook: (id, platform) =>
+    fetch(`/api/orderbook?market_id=${encodeURIComponent(id)}&${qp(platform)}`).then(json),
+  scan: (platform) => fetch(`/api/scan?${qp(platform)}`).then(json),
   wallets: () => fetch("/api/wallets").then(json),
   risk: () => fetch("/api/risk").then(json),
   kill: () => fetch("/api/kill", { method: "POST" }).then(json),

@@ -37,7 +37,7 @@ import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..logging_setup import get_logger
-from ..types import Market, Order, OrderBook, OrderBookLevel, Outcome
+from ..types import Market, Order, OrderBook, OrderBookLevel, Outcome, PricePoint
 from .base import BaseConnector
 from .registry import register
 
@@ -114,6 +114,42 @@ class ManifoldConnector(BaseConnector):
             m.outcomes[0],
         )
         return self._derive_book(outcome.price, m.liquidity_usd, token_id)
+
+    async def get_price_history(self, token_id: str, *, limit: int = 150) -> list[PricePoint]:
+        """Build a real price path from the market's bet history.
+
+        Manifold has no OHLC endpoint, but every bet records ``probAfter``
+        (the YES probability immediately after the bet) and ``createdTime``,
+        so the sequence of bets *is* the price history.
+        """
+        market_id = _strip_token_suffix(token_id)
+        is_no = token_id.upper().endswith(NO_SUFFIX)
+        try:
+            bets = await self._get_json(
+                "/v0/bets", params={"contractId": market_id, "limit": 1000}
+            )
+        except Exception as e:
+            log.warning("manifold.bets_fetch_failed", market_id=market_id, error=str(e))
+            return []
+        return self._bets_to_series(bets, is_no=is_no, limit=limit)
+
+    @staticmethod
+    def _bets_to_series(bets: Any, is_no: bool, limit: int) -> list[PricePoint]:
+        points: list[PricePoint] = []
+        for b in bets or []:
+            prob = _safe_float(b.get("probAfter"), default=-1.0)
+            ms = b.get("createdTime")
+            if not (0.0 <= prob <= 1.0) or ms is None:
+                continue
+            p = 1.0 - prob if is_no else prob
+            points.append(PricePoint(t=int(float(ms) / 1000.0), p=round(p, 4)))
+        # Bets come newest-first; the chart wants oldest-first.
+        points.sort(key=lambda pt: pt.t)
+        if len(points) > limit:
+            # Even downsample to keep the shape while capping payload size.
+            step = len(points) / limit
+            points = [points[int(i * step)] for i in range(limit)] + points[-1:]
+        return points
 
     # ---------- Parsing (pure, unit-tested offline) ----------
 

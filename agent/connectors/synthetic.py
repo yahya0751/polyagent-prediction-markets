@@ -14,7 +14,7 @@ import random
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from ..types import Market, Order, OrderBook, OrderBookLevel, Outcome
+from ..types import Market, Order, OrderBook, OrderBookLevel, Outcome, PricePoint
 from .base import BaseConnector
 from .registry import register
 
@@ -165,6 +165,32 @@ class SyntheticConnector(BaseConnector):
             asks=asks,
             timestamp=datetime.now(timezone.utc),
         )
+
+    async def get_price_history(self, token_id: str, *, limit: int = 150) -> list[PricePoint]:
+        """Deterministic synthetic history anchored to the current price.
+
+        The synthetic connector is explicitly a fabricated demo source, so a
+        generated series is honest here (unlike live platforms, which must
+        return real history).
+        """
+        market_id = token_id.rsplit("-", 1)[0]
+        m = await self.get_market(market_id)
+        if m is None:
+            return []
+        outcome = next(
+            (o for o in m.outcomes if token_id.endswith(o.name.lower())), m.outcomes[0]
+        )
+        rng = random.Random(hash(token_id) & 0xFFFFFFFF)
+        n = min(limit, 96)
+        now = int(datetime.now(timezone.utc).timestamp())
+        p = outcome.price
+        pts: list[PricePoint] = []
+        # Walk backwards from the real current price with mean reversion.
+        for i in range(n):
+            pts.append(PricePoint(t=now - (n - i) * 900, p=round(max(0.01, min(0.99, p)), 4)))
+            p += (outcome.price - p) * 0.05 + rng.uniform(-0.01, 0.01)
+        pts[-1] = PricePoint(t=now, p=round(outcome.price, 4))
+        return pts
 
     # Trading methods are not used directly: PaperConnector wraps this and
     # provides simulated fills. We provide stubs to satisfy the interface.

@@ -20,6 +20,8 @@ export default function App() {
   const [wallets, setWallets] = useState({ wallets: [], edges: [] });
   const [risk, setRisk] = useState(null);
   const [bootError, setBootError] = useState(null);
+  const [platform, setPlatform] = useState("manifold");
+  const [platforms, setPlatforms] = useState(["manifold"]);
 
   const refreshStatus = useCallback(async () => {
     try {
@@ -41,25 +43,36 @@ export default function App() {
   const runScan = useCallback(async () => {
     setScanning(true);
     try {
-      setScan(await api.scan());
+      setScan(await api.scan(platform));
     } catch (e) {
       console.error("scan:", e);
     } finally {
       setScanning(false);
     }
+  }, [platform]);
+
+  // Discover available platforms once.
+  useEffect(() => {
+    api
+      .platforms()
+      .then((p) => {
+        if (p.platforms?.length) setPlatforms(p.platforms);
+        if (p.default) setPlatform(p.default);
+      })
+      .catch(() => {});
   }, []);
 
-  // Initial boot
+  // Boot + reload whenever the platform changes.
   useEffect(() => {
     (async () => {
       try {
         const [s, ai, m, w, r, sc] = await Promise.all([
           api.status().catch(() => null),
           api.aiStatus().catch(() => ({ enabled: false, message: "AI status unavailable" })),
-          api.markets().catch(() => ({ markets: [] })),
+          api.markets(platform).catch(() => ({ markets: [] })),
           api.wallets().catch(() => ({ wallets: [], edges: [] })),
           api.risk().catch(() => null),
-          api.scan().catch(() => null),
+          api.scan(platform).catch(() => null),
         ]);
         setStatus(s);
         setAiStatus(ai);
@@ -72,15 +85,15 @@ export default function App() {
         setBootError(e.message || String(e));
       }
     })();
-  }, []);
+  }, [platform]);
 
-  // Periodic refresh — status, risk, market jitter
+  // Periodic refresh — status, risk, market prices
   useEffect(() => {
     const id = setInterval(async () => {
       refreshStatus();
       refreshRisk();
       try {
-        const m = await api.markets();
+        const m = await api.markets(platform);
         setMarkets(m.markets || []);
         setSelected((prev) => {
           if (!prev) return (m.markets || [])[0] || null;
@@ -92,7 +105,7 @@ export default function App() {
       }
     }, 8000);
     return () => clearInterval(id);
-  }, [refreshStatus, refreshRisk]);
+  }, [refreshStatus, refreshRisk, platform]);
 
   const onKill = async () => {
     try {
@@ -113,7 +126,12 @@ export default function App() {
 
   return (
     <div className="relative z-10 min-h-screen flex flex-col">
-      <Header status={status} />
+      <Header
+        status={status}
+        platform={platform}
+        platforms={platforms}
+        onPlatformChange={setPlatform}
+      />
 
       {bootError && (
         <div className="px-5 py-2 text-[11px] text-neon-red border-b border-neon-red/20 bg-neon-red/5">
@@ -137,7 +155,7 @@ export default function App() {
 
         {/* Right column */}
         <div className="col-span-12 lg:col-span-3 flex flex-col gap-4">
-          <OrderBook marketId={selected?.id || "mkt_001"} />
+          <OrderBook marketId={selected?.id || "mkt_001"} platform={platform} />
           <RiskPanel
             risk={risk}
             killed={status?.kill_switch}
@@ -149,7 +167,14 @@ export default function App() {
       </main>
 
       <footer className="relative z-10 border-t border-ink-700/60 px-5 py-2 flex items-center justify-between text-[10px] uppercase tracking-[0.25em] text-zinc-500">
-        <span>polyagent terminal · demo mode</span>
+        <span>
+          polyagent terminal ·{" "}
+          {status?.live_data ? (
+            <span className="text-neon-green">live: {status.platform || platform}</span>
+          ) : (
+            "demo mode"
+          )}
+        </span>
         <span className="flex items-center gap-3">
           <span>backend {status ? <span className="text-neon-green">online</span> : <span className="text-neon-red">offline</span>}</span>
           <span>·</span>

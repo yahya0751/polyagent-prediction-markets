@@ -32,7 +32,7 @@ function StatusDot({ tone = "green", pulse = true }) {
   return <span className={cls("inline-block w-1.5 h-1.5 rounded-full", color, pulse && "animate-pulseSoft")} />;
 }
 
-export default function Header({ status }) {
+export default function Header({ status, platform, platforms = [], onPlatformChange }) {
   const ai = status?.ai_enabled;
   const killed = status?.kill_switch;
   const mode = status?.mode || "PAPER_TRADING";
@@ -56,6 +56,27 @@ export default function Header({ status }) {
               <span className="text-zinc-500 ml-2 text-[11px] uppercase tracking-[0.3em]">// terminal</span>
             </div>
             <div className="label-mono">v0.1 · prediction-market intelligence</div>
+          </div>
+        </div>
+
+        <div className="hidden md:block w-px h-8 bg-ink-700/80" />
+
+        {/* Platform */}
+        <div className="flex items-center gap-2">
+          <StatusDot tone="green" />
+          <div className="leading-tight">
+            <div className="label-mono">Platform</div>
+            <select
+              value={platform || ""}
+              onChange={(e) => onPlatformChange?.(e.target.value)}
+              className="mt-0.5 bg-ink-900/80 border border-ink-700 rounded px-1.5 py-0.5 text-[12px] text-neon-green tracking-wider uppercase focus:outline-none focus:border-neon-green/50"
+            >
+              {platforms.map((p) => (
+                <option key={p} value={p} className="bg-ink-900 text-zinc-200">
+                  {p}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 

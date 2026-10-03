@@ -8,7 +8,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from ..types import Market, Order, OrderBook, Side
+from ..types import Market, Order, OrderBook, PricePoint, Side
 
 
 class BaseConnector(ABC):
@@ -23,6 +23,17 @@ class BaseConnector(ABC):
 
     @abstractmethod
     async def get_order_book(self, token_id: str) -> Optional[OrderBook]: ...
+
+    async def get_price_history(
+        self, token_id: str, *, limit: int = 150
+    ) -> list[PricePoint]:
+        """Recent price history for a token, oldest point first.
+
+        Optional: connectors that can't (cheaply) provide history return an
+        empty list, and callers show the current price only — never a
+        fabricated series. Override to supply real history.
+        """
+        return []
 
     # ---------- Trading ----------
     @abstractmethod

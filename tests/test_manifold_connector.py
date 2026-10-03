@@ -113,6 +113,26 @@ async def test_list_markets_end_to_end_offline():
     assert markets[0].market_id == "abc123"
 
 
+def test_bets_to_series_orders_and_orients():
+    # Manifold returns bets newest-first; probAfter is the YES probability.
+    bets = [
+        {"probAfter": 0.60, "createdTime": 3000},
+        {"probAfter": 0.50, "createdTime": 2000},
+        {"probAfter": 0.40, "createdTime": 1000},
+    ]
+    yes = ManifoldConnector._bets_to_series(bets, is_no=False, limit=150)
+    assert [p.t for p in yes] == [1, 2, 3]  # oldest-first, ms→s
+    assert [p.p for p in yes] == [0.4, 0.5, 0.6]
+
+    no = ManifoldConnector._bets_to_series(bets, is_no=True, limit=150)
+    assert [p.p for p in no] == [0.6, 0.5, 0.4]  # 1 - YES
+
+    # Malformed bets are skipped, not fatal.
+    assert ManifoldConnector._bets_to_series(
+        [{"probAfter": None, "createdTime": 1}, {"createdTime": 2}], is_no=False, limit=150
+    ) == []
+
+
 @pytest.mark.asyncio
 async def test_list_markets_survives_http_error():
     def handler(request: httpx.Request) -> httpx.Response:

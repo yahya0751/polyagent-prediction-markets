@@ -60,6 +60,13 @@ class Market(BaseModel):
         return v
 
 
+class PricePoint(BaseModel):
+    """One point on a market's price history. ``t`` is epoch seconds (UTC),
+    ``p`` is the outcome price in [0, 1]."""
+    t: int
+    p: float
+
+
 class OrderBookLevel(BaseModel):
     price: float
     size: float

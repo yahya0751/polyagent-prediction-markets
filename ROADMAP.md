@@ -33,9 +33,16 @@ Each is one new file implementing `BaseConnector`. Copy
 
 ## Dashboard & ops
 
-- 🟡 **Wire the web API to real connectors** — `agent/web/api.py` currently
-  serves demo data; make `/api/markets`, `/api/orderbook`, `/api/scan` call the
-  real connector (read-only) with the demo fallback, selectable by `?platform=`
+- ✅ **Wire the web API to real connectors** — done. `/api/markets`,
+  `/api/orderbook`, `/api/scan` call the real connectors + decision engine
+  (read-only), with demo fallback and a `?platform=` switch.
+- 🟡 **Signals in the web scan** — the web scan runs the real engine but with
+  neutral news/wallet inputs, so it (correctly) finds little edge. Wire the
+  news + wallet signals (shared with the runner) so the dashboard surfaces real
+  opportunities.
+- 🟡 **Richer market history** — Manifold history is built from the bet stream;
+  add proper down-sampling / OHLC and use `/v0/search-markets?sort=liquidity`
+  for a better default market list.
 - 🟢 **Alerting** — Telegram/Discord webhook when an `ENTER` opportunity fires
 - 🟢 Add a **screenshot/GIF** of the dashboard to the README
 - 🟡 Persist scan history + a PnL-over-time chart

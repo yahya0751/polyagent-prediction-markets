@@ -25,14 +25,14 @@ function Row({ row, side, max }) {
   );
 }
 
-export default function OrderBook({ marketId }) {
+export default function OrderBook({ marketId, platform }) {
   const [book, setBook] = useState({ bids: [], asks: [] });
 
   useEffect(() => {
     let cancel = false;
     const load = () =>
       api
-        .orderbook(marketId)
+        .orderbook(marketId, platform)
         .then((d) => !cancel && setBook(d))
         .catch(() => {});
     load();
@@ -41,7 +41,7 @@ export default function OrderBook({ marketId }) {
       cancel = true;
       clearInterval(id);
     };
-  }, [marketId]);
+  }, [marketId, platform]);
 
   const max =
     Math.max(

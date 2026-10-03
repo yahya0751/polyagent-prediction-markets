@@ -25,7 +25,7 @@ import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..logging_setup import get_logger
-from ..types import Market, Order, OrderBook, OrderBookLevel, Outcome, Side
+from ..types import Market, Order, OrderBook, OrderBookLevel, Outcome, PricePoint, Side
 from .base import BaseConnector
 from .registry import register
 
@@ -48,8 +48,10 @@ class PolymarketConnector(BaseConnector):
         api_passphrase: str = "",
         live: bool = False,
         timeout_s: float = 15.0,
+        transport: httpx.AsyncBaseTransport | None = None,
     ):
-        self._client = httpx.AsyncClient(timeout=timeout_s)
+        # ``transport`` is an injection seam for offline tests (httpx.MockTransport).
+        self._client = httpx.AsyncClient(timeout=timeout_s, transport=transport)
         self._private_key = private_key
         self._funder_address = funder_address
         self._api_key = api_key
@@ -128,6 +130,32 @@ class PolymarketConnector(BaseConnector):
         except (KeyError, ValueError, TypeError) as e:
             log.warning("polymarket.book_parse_failed", token_id=token_id, error=str(e))
             return None
+
+    async def get_price_history(self, token_id: str, *, limit: int = 150) -> list[PricePoint]:
+        """Real historical prices from the CLOB prices-history endpoint.
+
+        Returns points already in ``{t: epoch_seconds, p: price}`` form.
+        """
+        try:
+            data = await self._get_json(
+                f"{CLOB_BASE}/prices-history",
+                params={"market": token_id, "interval": "1w", "fidelity": 60},
+            )
+        except Exception as e:
+            log.warning("polymarket.history_fetch_failed", token_id=token_id, error=str(e))
+            return []
+        raw = data.get("history", []) if isinstance(data, dict) else []
+        points: list[PricePoint] = []
+        for pt in raw:
+            try:
+                points.append(PricePoint(t=int(pt["t"]), p=round(float(pt["p"]), 4)))
+            except (KeyError, ValueError, TypeError):
+                continue
+        points.sort(key=lambda p: p.t)
+        if len(points) > limit:
+            step = len(points) / limit
+            points = [points[int(i * step)] for i in range(limit)] + points[-1:]
+        return points
 
     # ---------- Helpers ----------
 
