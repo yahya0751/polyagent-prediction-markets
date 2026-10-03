@@ -1,0 +1,32 @@
+# PolyAgent backend — FastAPI + existing CLI
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+# System deps (kept minimal)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python deps. We install the project's existing requirements.txt if present,
+# then layer the web extras on top so the CLI still works.
+COPY requirements.txt* ./
+RUN if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+COPY requirements-web.txt ./
+RUN pip install -r requirements-web.txt
+
+# Copy project
+COPY . .
+
+EXPOSE 8000
+
+# Default command: run the FastAPI server.
+# CLI still works inside this image, e.g.:
+#   docker compose run --rm backend python -m agent.main scan-once --demo
+CMD ["uvicorn", "agent.web.api:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.coverage
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Secrets — NEVER commit
+.env
+.env.*
+!.env.example
+
+# Runtime data
+data/*.db
+data/*.db-*
+data/logs/
+data/KILL_SWITCH
+
+# Node / web dashboard
+node_modules/
+web/dist/
+web/.vite/
+npm-debug.log*
+yarn-error.log*
+
+# Editor
+.vscode/
+.idea/
+*.swp
+.DS_Store

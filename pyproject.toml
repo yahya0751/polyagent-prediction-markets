@@ -1,0 +1,59 @@
+[project]
+name = "polyagent"
+version = "0.1.0"
+description = "Semi-autonomous prediction-market trading agent (Polymarket + extensible connectors)"
+requires-python = ">=3.11"
+dependencies = [
+  "httpx>=0.27",
+  "websockets>=12.0",
+  "pydantic>=2.6",
+  "pyyaml>=6.0",
+  "python-dotenv>=1.0",
+  "rich>=13.7",
+  "typer>=0.12",
+  "sqlalchemy>=2.0",
+  "aiosqlite>=0.20",
+  "tenacity>=8.2",
+  "structlog>=24.1",
+  "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+live = [
+  # Polymarket's official Python CLOB client. Required only for live trading.
+  "py-clob-client>=0.17",
+  "web3>=6.15",
+]
+dev = [
+  "pytest>=8.0",
+  "pytest-asyncio>=0.23",
+  "ruff>=0.4",
+]
+
+[project.scripts]
+polyagent = "agent.main:app"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["agent*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+# A focused, high-signal gate: real bugs (F), syntax/style errors (E), and
+# tidy imports (I). Opinionated modernization rules (UP, SIM, …) are left off
+# on purpose — "modernize type hints to PEP 604" is tracked as a good-first
+# issue in ROADMAP.md rather than enforced here.
+select = ["E", "F", "I"]
+ignore = [
+  "E501",  # line length is advisory; long log/doc lines are fine
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "strict"
+testpaths = ["tests"]

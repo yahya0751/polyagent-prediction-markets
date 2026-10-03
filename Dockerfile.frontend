@@ -1,0 +1,19 @@
+# PolyAgent frontend — React + Vite + Tailwind
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install deps first for better caching
+COPY web/package.json web/package-lock.json* web/yarn.lock* ./
+RUN if [ -f package-lock.json ]; then npm ci; \
+    elif [ -f yarn.lock ]; then yarn install --frozen-lockfile; \
+    else npm install; fi
+
+# Copy the rest of the frontend
+COPY web/ ./
+
+EXPOSE 3000
+
+# Dev server with HMR; proxies /api → backend (see vite.config.js)
+ENV VITE_API_TARGET=http://backend:8000
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]

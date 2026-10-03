@@ -1,0 +1,52 @@
+name: "🔌 New connector"
+description: Propose or claim a new prediction-market connector (Kalshi, PredictIt, Metaculus, …)
+title: "connector: add <platform> connector"
+labels: ["connector", "good first issue"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Adding a connector is the best first contribution to PolyAgent. It
+        touches one new file and no engine code. Read
+        [`docs/adding-a-connector.md`](../blob/main/docs/adding-a-connector.md)
+        and copy `agent/connectors/manifold.py` as your template.
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      placeholder: e.g. Kalshi
+    validations:
+      required: true
+  - type: input
+    id: api
+    attributes:
+      label: Public API docs URL
+      placeholder: https://...
+    validations:
+      required: true
+  - type: dropdown
+    id: auth
+    attributes:
+      label: Do read endpoints require auth / an API key?
+      options:
+        - "No — fully public reads"
+        - "Yes — key required"
+        - "Not sure yet"
+    validations:
+      required: true
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Scope
+      options:
+        - label: list_markets / get_market / get_order_book (read paths)
+          required: true
+        - label: Offline unit tests with recorded JSON fixtures
+          required: true
+        - label: "Trading (place/cancel) — optional, can be a follow-up"
+          required: false
+  - type: input
+    id: claim
+    attributes:
+      label: Are you claiming this to work on it?
+      placeholder: "Yes / No"

@@ -1,0 +1,40 @@
+name: "🐛 Bug report"
+description: Something isn't working as expected
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. python -m agent.main scan-once --platform manifold
+        2. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Mode
+      options: ["PAPER_TRADING (demo/paper)", "MANUAL_APPROVAL", "AUTO_TRADING (live)"]
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      placeholder: "OS, Python version (python --version), how installed"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Paste tracebacks or JSONL log lines. **Redact any secrets.**
+      render: shell

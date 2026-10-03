@@ -1,0 +1,93 @@
+# polyagent runtime configuration.
+# Every threshold here is conservative by default. Loosen at your own risk.
+
+agent:
+  loop_interval_seconds: 30
+  max_concurrent_scans: 8
+
+compliance:
+  # Allowlisted jurisdictions for live trading. Polymarket blocks US
+  # persons under its ToS; this list is a defense-in-depth check on
+  # top of platform geofencing. Add/remove entries deliberately.
+  allowed_jurisdictions:
+    - GB
+    - DE
+    - FR
+    - JP
+    - SG
+    - AE
+  # Platforms the agent is allowed to touch.
+  allowed_platforms:
+    - polymarket
+  # If true, MODE=AUTO_TRADING is rejected and treated as MANUAL_APPROVAL.
+  # Flip only after you have run paper + manual for a meaningful sample.
+  require_manual_approval: true
+
+risk:
+  # Capital management
+  bankroll_usd: 1000.0
+  max_position_pct_bankroll: 0.02   # 2% per trade cap
+  max_category_exposure_pct: 0.15
+  max_correlated_exposure_pct: 0.10
+  max_daily_loss_pct: 0.05
+  max_drawdown_pct: 0.20
+  max_open_positions: 8
+
+  # Sizing
+  kelly_fraction: 0.25              # capped Kelly — never raw
+  min_position_usd: 5.0
+
+  # Stops
+  hard_stop_loss_pct: 0.20          # 20% below entry, in price terms
+  trailing_stop_activation_profit: 0.10
+  trailing_stop_distance: 0.05
+  partial_take_profit_levels:
+    - { price_delta: 0.10, fraction: 0.30 }
+    - { price_delta: 0.19, fraction: 0.30 }
+
+decision:
+  # Thresholds for ENTER. Failing any one => WATCH or NO_TRADE.
+  min_edge: 0.05                    # 5% absolute edge required
+  min_confidence: 0.55
+  min_liquidity_usd: 200.0
+  max_spread: 0.03                  # 3 cents on a [0,1] price
+  max_slippage_pct: 0.02
+  min_resolution_clarity: 0.70
+  min_source_credibility: 0.60
+  min_trade_score: 0.30
+
+  # Score formula weights. See core/decision.py for the full formula.
+  weights:
+    edge: 1.0
+    confidence: 1.0
+    liquidity: 0.5
+    resolution_clarity: 0.8
+    source_credibility: 0.6
+    wallet_signal: 0.4
+    catalyst: 0.6
+    spread_penalty: 1.5
+    slippage_penalty: 1.5
+    manipulation_penalty: 1.0
+    correlation_penalty: 0.8
+    uncertainty_penalty: 1.0
+
+execution:
+  default_order_type: limit
+  max_chase_ticks: 2                # never reprice more than 2 cents
+  stale_order_seconds: 120
+  min_tick: 0.01
+
+scanners:
+  market_scan_top_n: 50
+  unusual_volume_zscore: 2.0
+  stale_reaction_minutes: 30
+
+wallets:
+  # MVP runs a tiny in-process leaderboard. Set enabled: true and
+  # fill in CLICKHOUSE_URL for the full pipeline.
+  enabled: false
+  min_trades_for_ranking: 10
+  smart_wallet_min_sharpe: 1.0
+
+logging:
+  jsonl_path: ./data/logs/decisions.jsonl
