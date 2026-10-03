@@ -1,7 +1,6 @@
 # PolyAgent — Prediction Market Trading Agent
 
-<!-- Replace OWNER/REPO below with your GitHub path once the repo is pushed. -->
-[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
+[![CI](https://github.com/yahya0751/polyagent-prediction-markets/actions/workflows/ci.yml/badge.svg)](https://github.com/yahya0751/polyagent-prediction-markets/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
